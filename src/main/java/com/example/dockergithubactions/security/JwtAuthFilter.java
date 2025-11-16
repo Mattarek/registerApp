@@ -28,34 +28,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 									final FilterChain filterChain)
 			throws ServletException, IOException {
 
-		final String header = request.getHeader("Authorization");
+		final String path = request.getRequestURI();
 
-		// ⛔ Jeśli brak nagłówka – przepuść dalej i nic nie rób
-		if (header == null || !header.startsWith("Bearer ")) {
+		// ✅ Pomijamy JWT filter dla endpointów publicznych
+		if (path.startsWith("/api/auth/")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
 
-		final String token = header.substring(7);
+		final String header = request.getHeader("Authorization");
 
-		try {
-			if (jwtUtils.validateJwtToken(token)) {
-				final String username = jwtUtils.getUsernameFromJwtToken(token);
+		if (header != null && header.startsWith("Bearer ")) {
+			final String token = header.substring(7);
 
-				final UsernamePasswordAuthenticationToken auth =
-						new UsernamePasswordAuthenticationToken(
-								username,
-								null,
-								Collections.emptyList()
-						);
+			try {
+				if (jwtUtils.validateJwtToken(token)) {
+					final String username = jwtUtils.getUsernameFromJwtToken(token);
 
-				auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					final UsernamePasswordAuthenticationToken auth =
+							new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
 
-				SecurityContextHolder.getContext().setAuthentication(auth);
+					auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+					SecurityContextHolder.getContext().setAuthentication(auth);
+				}
+			} catch (final Exception e) {
+				// ⛔ Złap wyjątek, nie blokuj requestu od razu
 			}
-		} catch (final Exception e) {
-			// ⛔ ZŁAP wyjątek — w przeciwnym razie Security wywali 403
-			// i NIE TWÓRZ własnej odpowiedzi
 		}
 
 		filterChain.doFilter(request, response);

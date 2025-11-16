@@ -2,7 +2,6 @@ package com.example.dockergithubactions.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,11 +22,10 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
 		http
-				.csrf(csrf -> csrf.disable())
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**")) // wyłącz CSRF dla rejestracji i logowania
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-						.anyRequest().authenticated()
+						.requestMatchers("/api/auth/**").permitAll()  // publiczne endpointy
+						.anyRequest().authenticated()                 // reszta chroniona JWT
 				)
 				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
