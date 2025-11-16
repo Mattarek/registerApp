@@ -1,4 +1,7 @@
 package com.example.dockergithubactions.model;
 
-public class Status {
+public enum Status {
+	TODO,
+	IN_PROGRESS,
+	DONE
 }
