@@ -2,8 +2,7 @@ name: Release Docker Image
 
 on:
   push:
-    tags:
-      - "v*"
+    branch: [ "*" ]
 
 jobs:
   docker-release:
