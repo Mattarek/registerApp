@@ -1,11 +1,12 @@
-name: Release Docker Image
+name: CI Build
 
 on:
   push:
     branches:
       - main
-    tags-ignore:
-      - "*"
+  pull_request:
+    branches:
+      - main
 jobs:
   docker-release:
     runs-on: ubuntu-latest
