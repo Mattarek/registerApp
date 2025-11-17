@@ -1,13 +1,12 @@
-name: Java CI
+name: Release Docker Image
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - "v*"
 
 jobs:
-  build-and-push:
+  docker-release:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,7 +14,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Set up JDK 21
@@ -27,14 +26,10 @@ jobs:
       - name: Make Gradle Wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
+      - name: Build JAR
         run: ./gradlew build
 
-      - name: Run tests
-        run: ./gradlew test
-
-      # Convert repo name to lowercase → GHCR requires lowercase
-      - name: Prepare lowercase image name
+      - name: Prepare lowercase repo name
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
@@ -50,13 +45,16 @@ jobs:
         run: |
           IMAGE="ghcr.io/${REPO_LOWER}:latest"
           IMAGE_SHA="ghcr.io/${REPO_LOWER}:${{ github.sha }}"
-          
+          IMAGE_TAG="ghcr.io/${REPO_LOWER}:${{ github.ref_name }}"
+
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-          docker build -t "$IMAGE" -t "$IMAGE_SHA" .
+          docker build -t "$IMAGE" -t "$IMAGE_SHA" -t "$IMAGE_TAG" .
 
-      - name: Push Docker image
+      - name: Push Docker images
         run: |
           docker push "$IMAGE"
           docker push "$IMAGE_SHA"
+          docker push "$IMAGE_TAG"
