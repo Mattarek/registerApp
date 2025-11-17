@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # konieczne do pushowania do GHCR
+      packages: write
       id-token: write
 
     steps:
@@ -33,7 +33,11 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
-      # --- Docker build + push to GHCR ---
+      # Convert repo name to lowercase → GHCR requires lowercase
+      - name: Prepare lowercase image name
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -44,15 +48,15 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}:latest
-          IMAGE_SHA=ghcr.io/${{ github.repository }}:${{ github.sha }}
-
-          docker build -t $IMAGE -t $IMAGE_SHA .
-
+          IMAGE="ghcr.io/${REPO_LOWER}:latest"
+          IMAGE_SHA="ghcr.io/${REPO_LOWER}:${{ github.sha }}"
+          
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
 
+          docker build -t "$IMAGE" -t "$IMAGE_SHA" .
+
       - name: Push Docker image
         run: |
-          docker push $IMAGE
-          docker push $IMAGE_SHA
+          docker push "$IMAGE"
+          docker push "$IMAGE_SHA"
