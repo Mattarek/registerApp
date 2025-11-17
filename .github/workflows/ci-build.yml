@@ -2,7 +2,9 @@ name: Release Docker Image
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
+    tags-ignore:
+      - "v*"
 jobs:
   docker-release:
     runs-on: ubuntu-latest
